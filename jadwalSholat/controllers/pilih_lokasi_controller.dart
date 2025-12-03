@@ -44,7 +44,7 @@ class PilihLokasiController extends GetxController {
     _positionStream?.cancel();
   }
 
-  void tombolLokasiSaya() => mapController.move(currentPosition.value, 16.0);
+  void tombolLokasiSaya() => mapController.move(currentPosition.value, 19.0);
 
   Future<void> setLokasiJadwal() async {
     isLoadingAddress.value = true;

@@ -15,21 +15,11 @@ class PilihLokasiView extends StatelessWidget {
     return Scaffold(
       appBar  : AppBar(title : const Text("Pilih Lokasi & Eksperimen"), backgroundColor: AppColors.primaryGreen, foregroundColor: AppColors.warmWhite),
 
-      // Tombol Floating Action Button (Fitur 1)
-      floatingActionButton: FloatingActionButton(
-        backgroundColor   : AppColors.primaryGreen,
-        onPressed         : () => controller.tombolLokasiSaya(),
-        child             : const Icon(Icons.my_location, color: Colors.white,),
-      ),
-
-      // Geser FAB ke atas sedikit agar tidak tertutup panel
-      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
-
       body: Stack(
         children: [
           Obx(() {
             return FlutterMap(
-              // Hubungkan MapController (PENTING)
+              
               mapController: controller.mapController,
               options : MapOptions(initialCenter: controller.currentPosition.value, initialZoom: 15.0, interactionOptions: const InteractionOptions(flags: InteractiveFlag.all)),
               children: [
@@ -42,8 +32,19 @@ class PilihLokasiView extends StatelessWidget {
               ],
             );
           }),
+          
+          //tombol parani
+          Positioned(top: 5, right: 16,
+            child: Material(elevation: 4, shape: const CircleBorder(),
+              child: InkWell(
+                onTap       : () => controller.tombolLokasiSaya(),
+                borderRadius: BorderRadius.circular(50),
+                child       : Container(width: 56, height: 56, decoration : BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle), child: const Icon(Icons.my_location, color: Colors.white, size: 24))
+              ),
+            ),
+          ),
 
-          // PANEL BAWAH
+          // panel bawah
           Positioned(bottom: 20, left: 20, right: 20,
             child   : Card(color : Colors.white.withOpacity(0.95), elevation : 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               child   : Padding(
@@ -68,18 +69,17 @@ class PilihLokasiView extends StatelessWidget {
                     ),
                     const Divider(),
 
-                    // Informasi Koordinat (Debug info)
+                    // debug
                     Obx(() => Column(
                       children: [
                         _infoRow("Lat/Long", "${controller.latitude.value.toStringAsFixed(5)}, ${controller.longitude.value.toStringAsFixed(5)}"),
                         _infoRow("Akurasi", "${controller.accuracy.value.toStringAsFixed(1)} m"),
-                        _infoRow("Update", controller.timestamp.value.split(' ').last), // Jam saja
+                        _infoRow("Update", controller.timestamp.value.split(' ').last), 
                       ],
                     )),
 
                     const SizedBox(height: 15),
-
-                    // --- FITUR 2: TOMBOL SET LOKASI ---
+                    
                     SizedBox(
                       width: double.infinity,
 

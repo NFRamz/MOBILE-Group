@@ -9,61 +9,56 @@ class JadwalSholatController extends GetxController {
   var doaDzikir     = ''.obs;
   var isLoading     = false.obs;
   var lokasiSaatIni = 'Mencari Lokasi...'.obs;
-// 1. Variable untuk menyembunyikan tombol
-  final isTestMode = false.obs;
 
-  // 2. Fungsi untuk mengaktifkan mode test (seperti Developer Mode Android)
+  final isTestMode = false.obs;
   int _tapCount = 0;
 
-
   final dioService = DioService();
-  final notificationService = SholatNotification(); // Instance service
+  final notificationService = SholatNotification();
+
+  @override
+  void onInit() async {
+    super.onInit();
+    // 1. WAJIB INIT NOTIFIKASI DULU
+    await notificationService.init();
+
+    // 2. Baru ambil data
+    fetchJadwal();
+    fetchDoaDzikir();
+  }
 
   Future<void> fetchJadwal() async {
     isLoading.value = true;
-
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
 
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-
       List<Placemark> convertKoordinatToNamaKota = await placemarkFromCoordinates(position.latitude, position.longitude);
-      String getNamaKota                         = convertKoordinatToNamaKota[0].subAdministrativeArea ?? "Pamekasan";
+      String getNamaKota = convertKoordinatToNamaKota[0].subAdministrativeArea ?? "Pamekasan";
+      String namaKota_siapKirim = normalizeKota(getNamaKota);
 
-      // Bersihkan nama kota (hilangkan Kab/Kota jika perlu untuk UI)
       lokasiSaatIni.value = getNamaKota;
       notificationService.updateLokasi(getNamaKota);
 
-      final result = await dioService.fetchJadwal(getNamaKota);
+      final result = await dioService.fetchJadwal(namaKota_siapKirim);
       jadwal.value = result;
 
-      // --- LOGIKA NOTIFIKASI SHOLAT ---
       if (result != null && result['jadwal'] != null) {
-        // Reset jadwal lama agar tidak duplikat
         await notificationService.cancelAllNotifications();
-
         final mapJadwal = result['jadwal'];
-
-        // List waktu sholat yang ingin dinotifikasi
         final keys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
 
         for (var key in keys) {
           if (mapJadwal[key] != null) {
-            // Format Key jadi Capital (Subuh)
             String namaSholat = key[0].toUpperCase() + key.substring(1);
-            String jam = mapJadwal[key]; // "04:15"
-
-            // Jadwalkan
+            String jam = mapJadwal[key];
             await notificationService.scheduleSholatNotification(namaSholat, jam);
           }
         }
       }
-      // --------------------------------
-
     } catch (e) {
       print("Error location/jadwal: $e");
     } finally {
@@ -77,40 +72,39 @@ class JadwalSholatController extends GetxController {
     isLoading.value = false;
   }
 
-
   void toggleTestMode() {
     _tapCount++;
-    if (_tapCount >= 5) { // Ketuk 5 kali untuk munculkan
+    if (_tapCount >= 5) {
       isTestMode.value = !isTestMode.value;
       Get.snackbar("Mode Debug", isTestMode.value ? "Fitur Test Aktif" : "Fitur Test Disembunyikan");
       _tapCount = 0;
     }
   }
-  // 3. Logika Test Notifikasi (1 Menit ke depan)
+
   void triggerTestNotif() {
     final now = DateTime.now().add(const Duration(minutes: 1));
     final String jamTest = "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
 
-    print("🔔 Menjadwalkan Test di jam: $jamTest");
+    print("Menjadwalkan Test di jam: $jamTest");
 
+    // Panggil fungsi schedule
     SholatNotification().scheduleSholatNotification("Test Adzan", jamTest);
 
-    Get.snackbar("Test Dimulai", "Tunggu 1 menit. Kunci layar HP sekarang.",
+    Get.snackbar("Test Dimulai", "Tunggu 1 menit. Notifikasi akan muncul pukul $jamTest",
         duration: const Duration(seconds: 4),
         snackPosition: SnackPosition.BOTTOM
     );
   }
-// Test 2: Bunyi Sekarang (Untuk cek suara & permission)
+
   void triggerImmediateTest() {
     SholatNotification().showTestAdzanNow();
     Get.snackbar("Info", "Mencoba membunyikan adzan sekarang...");
   }
-  @override
-  void onInit() async {
-    super.onInit();
-    // Pastikan service notifikasi diinit (ideally di main.dart, tapi disini safe check)
-    // await notificationService.init();
-    fetchJadwal();
-    fetchDoaDzikir();
-  }
+}
+
+String normalizeKota(String kota) {
+  return kota.trim().replaceFirst(
+    RegExp(r'^(Kabupaten |KABUPATEN |Kab\. |KAB\. |Kab |KAB |Kota |KOTA )'),
+    '',
+  );
 }

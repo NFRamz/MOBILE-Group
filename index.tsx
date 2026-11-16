@@ -206,7 +206,7 @@ export default function TacticalHQScreen() {
             <TouchableOpacity style={styles.signOutButton} onPress={() => router.push('/health')} activeOpacity={0.8}>
               <Text style={styles.signOutButtonText}>Health</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.signOutButton} onPress={() => router.push('/vault')} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.signOutButton} onPress={() => router.push('/SecureVaultDemo')} activeOpacity={0.8}>
               <Text style={styles.signOutButtonText}>Vault</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.signOutButton} onPress={signOut} activeOpacity={0.8}>
